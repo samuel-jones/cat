@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Cats stuck up a tree</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.js"></script>
+    <link
+      href="https://api.tiles.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Helvetica Neue', Helvetica, Arial, Sans-serif;
+      }
+
+      #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+      }
+
+      h1 {
+        font-size: 20px;
+        line-height: 30px;
+      }
+
+      h2 {
+        font-size: 14px;
+        line-height: 20px;
+        margin-bottom: 10px;
+      }
+
+      h3 {
+        font-size: 14px;
+       
+       
+        color: #2dc4b2;
+      }
+
+      a {
+        text-decoration: none;
+        color: #2dc4b2;
+      }
+
+      #console {
+        position: absolute;
+        width: 290px;
+        height: 490px;
+        margin: 10px;
+        padding: 10px 20px;
+        background-color: white;
+      }
+
+      .session {
+        margin-bottom: 20px;
+      }
+
+      .row {
+        height: 12px;
+        width: 100%;
+      }
+
+      .colors {
+        background: linear-gradient(
+          to right,
+         
+          #3bb3c3,
+          #669ec4,
+          #8b88b6,
+          #a2719b,
+          #aa5e79
+        );
+        margin-bottom: 5px;
+      }
+
+
+      p{
+        font-size: 10px;
+         }
+
+
+ .row
+
+
+    {
+  font-size: 10px;
+}
+
+      .label {
+        width: 15%;
+        display: inline-block;
+      /*  text-align: center;*/
+        font-size: 10px;
+      }
+
+
+.color {color: #2dc4b2;}
+
+
+    </style>
+  </head>
+
+  <body>
+    <div id="map"></div>
+    <div id="console">
+      <h1>Cats stuck up a tree in London</h1>
+      <p>
+        The London Fire Brigade attends a range of non-fire incidents which can sometimes  include assistance to animals that may be trapped or in distress.
+        <br> This map shows all incidents recorded for a cat which involves a tree between 2009 and 2020. Data can be filtered by month,  using the time slider bar below, to assess season variability.  There tends to be more cats up a tree between March and July. Data can also be filtered by property type.
+        <br><br>
+
+        Data: Animal rescue incidents attended by LFB, London Fire Brigade
+        <a
+          href="https://data.london.gov.uk/dataset/animal-rescue-incidents-attended-by-lfb"
+          >Available at GLA Data Store</a>
+          <br><br>
+        
+Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a>
+
+
+
+      </p>
+      <!-- <div class="session">
+        <h2>Deprivation quintiles:</h2>
+        <div class="row colors"></div>
+        <div class="row labels">
+          <div class="label">Most deprived</div>
+          <div class="label"></div>
+          <div class="label"></div>
+          <div class="label"></div>
+          <div class="label">Least deprived</div>
+        </div>
+      </div> -->
+     
+      <div class="session" id="sliderbar">
+        <h2>Month: <span class ="color"><label id="active-month"> November</label></span></h2>
+          <input
+          id="slider"
+          class="row"
+          type="range"
+          min="1"
+          max="12"
+          step="1"
+          value="11"
+        />
+       </div>
+       <div class='session'>
+
+  <h2>Filter by property types</h2>
+  <div class='row' id='filters'>
+    <input id='all' type='radio' name='toggle' value='all' checked='checked'>
+    <label for="all">All</label>
+          <input id="dwelling" type="radio" name="toggle" value="dwelling" />
+          <label for="dwelling">Dwelling</label>
+          <input id="outdoor" type="radio" name="toggle" value="outdoor" />
+          <label for="outdoor">Outdoor</label>
+          <input id="non residential" type="radio" name="toggle" value="non residential" />
+          <label for="non residential">Non Residential</label>
+          <input id="other residential" type="radio" name="toggle" value="other residential" />
+          <label for="other residential">Other Residential</label>
+          <input id="outdoor structure" type="radio" name="toggle" value="outdoor structure" />
+          <label for="outdoor structure">Outdoor Structure</label>
+        </div>
+</div>
+
+    </div>
+    <script>
+      mapboxgl.accessToken = 'pk.eyJ1IjoiZXhhbXBsZXMiLCJhIjoiY2p0MG01MXRqMW45cjQzb2R6b2ptc3J4MSJ9.zA2W0IkI0c6KaAhJfk9bWg';
+      // This adds the map to your page
+      var map = new mapboxgl.Map({
+        container: 'map', // container id specified in the HTML
+        style: 'mapbox://styles/mapbox/light-v10', // style URL
+        center: [-0.153, 51.5107128], // initial map center in [lon, lat]
+        zoom: 9.5
+      });
+
+
+
+
+      map.on('load', function() {
+
+
+        var filterMonth = ['==', ['number', ['get', 'Month']], 3];
+        var filterPropertyCategory = ['!=', ['string', ['get', 'PropertyCategory']], 'placeholder'];
+
+
+map.loadImage('https://samuel-jones.github.io/hex_heat_test/cat.png', (error, image) => {
+
+    if (error) throw error;
+
+    map.addImage('cat', image);
+        map.addLayer({
+          id: 'cases',
+          type: 'symbol',
+          source: {
+            type: 'geojson',
+            data: './test.geojson' // replace this with the url of your own geojson
+          },
+          "layout": {
+
+            "icon-image": "cat",
+
+            "icon-size": 0.3
+
+        },
+          'filter': ['all', filterMonth, filterPropertyCategory]
+        });
+        });
+
+
+
+
+// map.loadImage('https://samuel-jones.github.io/hex_heat_test/caution.png', (error, image) => {
+
+//     if (error) throw error;
+
+//     map.addImage('cat', image);
+
+//     map.addLayer({
+
+//         "id": "cases",
+
+//         "type": "symbol",
+
+//         "source": {type: 'geojson',  data: './test.geojson'},
+// ,
+//         "layout": {
+
+//             "icon-image": "cat",
+
+//             "icon-size": 1
+
+//         }
+
+//     });
+
+// });
+
+
+
+
+        // update month filter when the slider is dragged
+        document
+          .getElementById('slider')
+          .addEventListener('input', function(e) {
+            var month = parseInt(e.target.value);
+            // update the map
+            map.setFilter('cases', [
+              '==',
+              ['number', ['get', 'Month']],
+              month
+            ]);
+
+            // converting 0-23 month to AMPM format
+           // var ampm = month >= 12 ? 'PM' : 'AM';
+          //var month = month >= 5 ? 'Jan' : 'Feb' : 'Mar';
+
+
+
+          //var month2 = month <= 3 ? 'Feb' :'' ;
+
+          // var month = month = 1 ? 'Jan' : month = 2 ? 'Feb' : month = 3 ? 'Mar';
+
+
+
+var months = [
+'',
+'January',
+'February',
+'March',
+'April',
+'May',
+'June',
+'July',
+'August',
+'September',
+'October',
+'November',
+'December'
+];
+
+            var month = month;
+
+            // update text in the UI
+            document.getElementById('active-month').innerText = months[month];
+          });
+
+
+
+
+var popup = new mapboxgl.Popup({
+closeButton: false,
+closeOnClick: false
+});
+ 
+map.on('mouseenter', 'cases', function(e) {
+// Change the cursor style as a UI indicator.
+map.getCanvas().style.cursor = 'pointer';
+ 
+var coordinates = e.features[0].geometry.coordinates.slice();
+var description = 'Borough: ' + e.features[0].properties.Locality + '<br>Year: ' + e.features[0].properties.CalYear + '<br>Details: ' + e.features[0].properties.FinalDescription;
+ 
+// Ensure that if the map is zoomed out such that multiple
+// copies of the feature are visible, the popup appears
+// over the copy being pointed to.
+while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+}
+ 
+// Populate the popup and set its coordinates
+// based on the feature found.
+popup
+.setLngLat(coordinates)
+.setHTML(description)
+.addTo(map);
+});
+ 
+map.on('mouseleave', 'cases', function() {
+map.getCanvas().style.cursor = '';
+popup.remove();
+});
+
+
+
+ document
+          .getElementById('filters')
+          .addEventListener('change', function(e) {
+            var day = e.target.value;
+            // update the map filter
+            if (day === 'all') {
+              filterPropertyCategory = ['!=', ['string', ['get', 'PropertyCategory']], 'placeholder'];
+            } else if (day === 'dwelling') {
+              filterPropertyCategory = [
+                'match',
+                ['get', 'PropertyCategory'],
+                ['Dwelling'],
+                true,
+                false
+              ];
+
+                } else if (day === 'outdoor') {
+              filterPropertyCategory = [
+                'match',
+                ['get', 'PropertyCategory'],
+                ['Outdoor'],
+                true,
+                false
+              ];
+
+
+            } else if (day === 'non residential') {
+              filterPropertyCategory = [
+                'match',
+                ['get', 'PropertyCategory'],
+                ['Non Residential'],
+                true,
+                false
+              ];
+
+            } else if (day === 'other residential') {
+              filterPropertyCategory = [
+                'match',
+                ['get', 'PropertyCategory'],
+                ['Other Residential'],
+                true,
+                false
+              ];
+
+              } else if (day === 'other residential') {
+              filterPropertyCategory = [
+                'match',
+                ['get', 'PropertyCategory'],
+                ['Outdoor Structure'],
+                true,
+                false
+              ];
+
+            } else {
+              console.log('error');
+            }
+            map.setFilter('cases', ['all', filterMonth, filterPropertyCategory]);
+          });
+
+
+
+
+
+
+
+
+
+      });
+    </script>
+  </body>
+</html>
